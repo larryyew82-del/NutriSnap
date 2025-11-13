@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FoodAnalysis, HealthRiskAssessment } from '../types';
+import { FoodAnalysis, HealthRiskAssessment, SupplementSuggestion } from '../types';
 import GoogleIcon from './icons/GoogleIcon';
 import EditIcon from './icons/EditIcon';
+import LeafIcon from './icons/LeafIcon';
 
 interface AnalysisResultProps {
   analysis: FoodAnalysis;
@@ -10,6 +11,7 @@ interface AnalysisResultProps {
   isUpdating: boolean;
   portionMultiplier: number;
   onPortionChange: (multiplier: number) => void;
+  supplementSuggestions: SupplementSuggestion[];
 }
 
 const RiskMeter: React.FC<{ score: number; label: string }> = ({ score, label }) => {
@@ -41,7 +43,7 @@ const NutritionItem: React.FC<{ label: string; value: string | number; unit: str
   </div>
 );
 
-const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysis, risks, onUpdate, isUpdating, portionMultiplier, onPortionChange }) => {
+const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysis, risks, onUpdate, isUpdating, portionMultiplier, onPortionChange, supplementSuggestions }) => {
   const { nutritionalInfo, sources } = analysis;
   const [isEditing, setIsEditing] = useState(false);
   const [editedFoodName, setEditedFoodName] = useState(nutritionalInfo.foodName);
@@ -182,26 +184,46 @@ const AnalysisResult: React.FC<AnalysisResultProps> = ({ analysis, risks, onUpda
             </div>
         </div>
 
-      {sources.length > 0 && (
-        <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
-          <h3 className="text-xl font-bold text-slate-700 mb-3">Data Sources</h3>
-          <ul className="space-y-2">
-            {sources.map((source, index) => source.web && (
-              <li key={index} className="flex items-start">
-                <GoogleIcon className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0 text-slate-500" />
-                <a
-                  href={source.web.uri}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline text-sm"
-                >
-                  {source.web.title}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+        {supplementSuggestions.length > 0 && (
+            <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+                <div className="text-center">
+                    <LeafIcon className="w-8 h-8 mx-auto text-emerald-500 mb-2" />
+                    <h3 className="text-2xl font-bold text-slate-800">AI-Powered Supplement Ideas</h3>
+                </div>
+                <p className="text-xs text-center text-slate-500 mt-2 mb-4 bg-slate-100 p-2 rounded-md">
+                    Disclaimer: This is not medical advice. Consult with a healthcare professional before taking any supplements.
+                </p>
+                <ul className="space-y-4">
+                    {supplementSuggestions.map((suggestion, index) => (
+                        <li key={index} className="p-3 bg-emerald-50 rounded-lg">
+                            <p className="font-bold text-emerald-800">{suggestion.name}</p>
+                            <p className="text-sm text-emerald-700 mt-1">{suggestion.reasoning}</p>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        )}
+
+        {sources.length > 0 && (
+            <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
+                <h3 className="text-xl font-bold text-slate-700 mb-3">Data Sources</h3>
+                <ul className="space-y-2">
+                    {sources.map((source, index) => source.web && (
+                    <li key={index} className="flex items-start">
+                        <GoogleIcon className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0 text-slate-500" />
+                        <a
+                        href={source.web.uri}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline text-sm"
+                        >
+                        {source.web.title}
+                        </a>
+                    </li>
+                    ))}
+                </ul>
+            </div>
+        )}
     </div>
   );
 };

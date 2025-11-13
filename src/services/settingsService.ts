@@ -18,6 +18,7 @@ const DEFAULT_SETTINGS: Settings = {
     lunch: '13:00',
     dinner: '19:00',
   },
+  showSupplementSuggestions: false,
 };
 
 export const getSettings = (): Settings => {
@@ -28,7 +29,8 @@ export const getSettings = (): Settings => {
     const storedSettings = localStorage.getItem(key);
     if (storedSettings) {
       // Merge with defaults to ensure all keys are present if the structure changed
-      return { ...DEFAULT_SETTINGS, ...JSON.parse(storedSettings) };
+      const parsedSettings = JSON.parse(storedSettings);
+      return { ...DEFAULT_SETTINGS, ...parsedSettings };
     }
     return DEFAULT_SETTINGS;
   } catch (error) {

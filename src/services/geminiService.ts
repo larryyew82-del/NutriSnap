@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
-import { FoodAnalysis, HealthRiskAssessment, NutritionalInfo, GroundingSource } from '../types';
+import { FoodAnalysis, HealthRiskAssessment, NutritionalInfo, GroundingSource, SupplementSuggestion } from '../types';
 
 if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable is not set");
@@ -67,9 +67,6 @@ export const analyzeFoodImage = async (base64Image: string, mimeType: string, co
 
     const nutritionalInfo = JSON.parse(jsonText) as NutritionalInfo;
     
-    // Fix: Filter and map grounding chunks to match the GroundingSource type.
-    // The API may return grounding chunks where `web.uri` or `web.title` is missing,
-    // but our internal `GroundingSource` type requires them. This ensures type safety.
     const sources: GroundingSource[] = (response.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [])
       .filter(chunk => chunk.web?.uri && chunk.web?.title)
       .map(chunk => ({
@@ -147,6 +144,57 @@ ${JSON.stringify(nutritionalInfo, null, 2)}`;
     throw new Error("Failed to assess health risks. The nutritional data might be incomplete.");
   }
 };
+
+export const getSupplementSuggestions = async (risks: HealthRiskAssessment): Promise<SupplementSuggestion[]> => {
+  const supplementSchema = {
+    type: Type.OBJECT,
+    properties: {
+      supplements: {
+        type: Type.ARRAY,
+        description: "A list of 2-3 supplement suggestions.",
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            name: { type: Type.STRING, description: "The name of the supplement (e.g., 'Omega-3 Fish Oil')." },
+            reasoning: { type: Type.STRING, description: "A brief, one-sentence explanation of why this supplement might be relevant to the user's health risks." }
+          },
+          required: ['name', 'reasoning']
+        }
+      }
+    }
+  };
+
+  try {
+    const prompt = `You are an AI health and wellness advisor. Based on the following health risk assessment, suggest 2-3 nutritional supplements that could be relevant. For each supplement, provide a brief, one-sentence explanation of its potential benefits related to the user's risks. This is for informational purposes only and is not medical advice. Frame it as educational insight.
+
+Health Risks:
+- Diabetes Risk: ${risks.diabetes.score}/10
+- Hypertension Risk: ${risks.hypertension.score}/10
+- Cholesterol Risk: ${risks.cholesterol.score}/10
+
+Respond ONLY with a JSON object conforming to the provided schema. Do not include any disclaimers or extra text.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-pro',
+      contents: prompt,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: supplementSchema,
+      },
+    });
+
+    const text = response.text;
+    if (!text) {
+      return [];
+    }
+    const result = JSON.parse(text) as { supplements: SupplementSuggestion[] };
+    return result.supplements || [];
+  } catch (error) {
+    console.error("Error getting supplement suggestions:", error);
+    return []; // Return an empty array on failure
+  }
+};
+
 
 export const getChat = () => {
     return ai.chats.create({

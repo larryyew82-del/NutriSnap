@@ -68,4 +68,10 @@ export interface Settings {
     lunch: string; // "HH:MM"
     dinner:string; // "HH:MM"
   };
+  showSupplementSuggestions: boolean;
+}
+
+export interface SupplementSuggestion {
+  name: string;
+  reasoning: string;
 }

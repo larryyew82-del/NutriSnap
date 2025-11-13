@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { analyzeFoodImage, assessHealthRisk, getDailyHealthTip } from './services/geminiService';
+import { analyzeFoodImage, assessHealthRisk, getDailyHealthTip, getSupplementSuggestions } from './services/geminiService';
 import { addHistoryEntry } from './services/historyService';
 import * as authService from './services/authService';
 import { getSettings } from './services/settingsService';
-import { FoodAnalysis, HealthRiskAssessment, HistoryEntry, NutritionalInfo, User } from './types';
+import { FoodAnalysis, HealthRiskAssessment, HistoryEntry, NutritionalInfo, User, SupplementSuggestion } from './types';
 
 import Header from './components/Header';
 import ImageUploader from './components/ImageUploader';
@@ -28,6 +28,7 @@ const App: React.FC = () => {
   const [analysis, setAnalysis] = useState<FoodAnalysis | null>(null);
   const [baseAnalysis, setBaseAnalysis] = useState<FoodAnalysis | null>(null);
   const [risks, setRisks] = useState<HealthRiskAssessment | null>(null);
+  const [supplementSuggestions, setSupplementSuggestions] = useState<SupplementSuggestion[]>([]);
   const [portionMultiplier, setPortionMultiplier] = useState<number>(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,6 +99,7 @@ const App: React.FC = () => {
     setError(null);
     setPortionMultiplier(1);
     setActiveTab('analyzer');
+    setSupplementSuggestions([]);
   };
 
   const handleLogin = () => {
@@ -131,6 +133,7 @@ const App: React.FC = () => {
     setAnalysis(null);
     setRisks(null);
     setError(null);
+    setSupplementSuggestions([]);
   };
 
   const performInitialAnalysis = useCallback(async (base64Image: string, imageType: string, correctedName?: string) => {
@@ -140,6 +143,7 @@ const App: React.FC = () => {
       setAnalysis(null);
       setRisks(null);
       setBaseAnalysis(null);
+      setSupplementSuggestions([]);
     }
     
     try {
@@ -150,6 +154,14 @@ const App: React.FC = () => {
       
       const healthRisks = await assessHealthRisk(foodAnalysis.nutritionalInfo);
       setRisks(healthRisks);
+
+      // Fetch supplement suggestions if opted-in
+      const settings = getSettings();
+      if (settings.showSupplementSuggestions) {
+        const suggestions = await getSupplementSuggestions(healthRisks);
+        setSupplementSuggestions(suggestions);
+      }
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
       console.error(err);
@@ -179,6 +191,7 @@ const App: React.FC = () => {
     setPortionMultiplier(newMultiplier);
     setIsProcessing(true);
     setError(null);
+    setSupplementSuggestions([]);
 
     try {
       const baseNutrients = baseAnalysis.nutritionalInfo;
@@ -206,6 +219,13 @@ const App: React.FC = () => {
 
       const healthRisks = await assessHealthRisk(adjustedNutrients);
       setRisks(healthRisks);
+      
+      const settings = getSettings();
+      if (settings.showSupplementSuggestions) {
+        const suggestions = await getSupplementSuggestions(healthRisks);
+        setSupplementSuggestions(suggestions);
+      }
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred while adjusting portion.');
       console.error(err);
@@ -292,6 +312,7 @@ const App: React.FC = () => {
                           isUpdating={isProcessing}
                           portionMultiplier={portionMultiplier}
                           onPortionChange={handlePortionChange}
+                          supplementSuggestions={supplementSuggestions}
                         />
                         <div className="text-center mt-6">
                             <button 
