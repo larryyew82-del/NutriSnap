@@ -1,0 +1,7 @@
+{
+  "name": "NutriSnap AI",
+  "description": "An AI-powered app that analyzes food pictures to provide nutritional information and assess health risks for conditions like diabetes, high cholesterol, and hypertension. It also features an AI chatbot for nutritional questions.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
