@@ -7,34 +7,6 @@ if (!process.env.API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-const nutritionalInfoSchema = {
-  type: Type.OBJECT,
-  properties: {
-    foodName: { type: Type.STRING, description: "The name of the food identified in the image." },
-    calories: { type: Type.NUMBER, description: "Estimated total calories." },
-    protein: { type: Type.NUMBER, description: "Estimated protein in grams." },
-    carbohydrates: {
-      type: Type.OBJECT,
-      properties: {
-        total: { type: Type.NUMBER, description: "Estimated total carbohydrates in grams." },
-        sugar: { type: Type.NUMBER, description: "Estimated sugar in grams." },
-      },
-      required: ['total', 'sugar']
-    },
-    fat: {
-      type: Type.OBJECT,
-      properties: {
-        total: { type: Type.NUMBER, description: "Estimated total fat in grams." },
-        saturated: { type: Type.NUMBER, description: "Estimated saturated fat in grams." },
-      },
-      required: ['total', 'saturated']
-    },
-    sodium: { type: Type.NUMBER, description: "Estimated sodium in milligrams." },
-    cholesterol: { type: Type.NUMBER, description: "Estimated cholesterol in milligrams." }
-  },
-  required: ['foodName', 'calories', 'protein', 'carbohydrates', 'fat', 'sodium', 'cholesterol']
-};
-
 export const analyzeFoodImage = async (base64Image: string, mimeType: string, correctedFoodName?: string): Promise<FoodAnalysis> => {
   const jsonStructure = `{
   "foodName": "string",
@@ -82,7 +54,11 @@ export const analyzeFoodImage = async (base64Image: string, mimeType: string, co
       },
     });
 
-    let jsonText = response.text.trim();
+    const text = response.text;
+    if (!text) {
+      throw new Error("Received an empty response from the AI.");
+    }
+    let jsonText = text.trim();
     if (jsonText.startsWith('```json')) {
       jsonText = jsonText.slice(7, -3);
     } else if (jsonText.startsWith('```')) {
@@ -161,7 +137,11 @@ ${JSON.stringify(nutritionalInfo, null, 2)}`;
       },
     });
     
-    return JSON.parse(response.text) as HealthRiskAssessment;
+    const text = response.text;
+    if (!text) {
+        throw new Error("Received an empty risk assessment response from the AI.");
+    }
+    return JSON.parse(text) as HealthRiskAssessment;
   } catch (error) {
     console.error("Error assessing health risk:", error);
     throw new Error("Failed to assess health risks. The nutritional data might be incomplete.");
@@ -186,7 +166,11 @@ export const getDailyHealthTip = async (): Promise<string> => {
       contents: prompt,
     });
     
-    return response.text.trim();
+    const text = response.text;
+    if (!text) {
+        throw new Error("Received an empty health tip from the AI.");
+    }
+    return text.trim();
   } catch (error) {
     console.error("Error getting daily health tip:", error);
     return "Remember to eat a balanced meal with plenty of vegetables!"; // Fallback tip

@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import type { Chat } from '@google/genai';
 import { getChat } from '../services/geminiService';
 import { ChatMessage } from '../types';
-import SparkIcon from './icons/SparkIcon';
 
 const Chatbot = () => {
   const [chat, setChat] = useState<Chat | null>(null);

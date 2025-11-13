@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import CameraIcon from './icons/CameraIcon';
 import UploadIcon from './icons/UploadIcon';
 import SparkIcon from './icons/SparkIcon';
